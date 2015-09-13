@@ -1,0 +1,11 @@
+{
+  "name": "jalali-calendar",
+  "title": "Jalali Calendar",
+  "main": "./lib/main.js",
+  "id": "jalali-calendar",
+  "description": "Show Shamsi date for persian users",
+  "author": "Mostafa",
+  "icon": "./data/icon.png",
+  "license": "GPL 2.0",
+  "version": "0.1"
+}

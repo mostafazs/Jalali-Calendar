@@ -24,3 +24,9 @@ body{
 	text-align: center;
     margin: 0 auto;
 }
+#show_date_gregorian{
+	text-align: center;
+    margin: 0 auto;
+    font-size:0.9em;
+   /*font-size:10px;*/
+}

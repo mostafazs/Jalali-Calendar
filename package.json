@@ -2,7 +2,7 @@
   "title": "Jalali Calendar",
   "name": "jalali-calendar",
   "id": "jalali-calendar@jetpack",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Show Shamsi date for persian users(Jalali Calendar - تقویم جلالی)",
   "icon": "data/icon.png",
   "main": "index.js",
@@ -13,6 +13,6 @@
   },
   "license": "GPL 2.0",
   "keywords": [
-    "jetpack"
+    "jetpack, calendar, date, jalali, jetpack, persian, فارسی,تقویم,جلالی "
   ]
 }

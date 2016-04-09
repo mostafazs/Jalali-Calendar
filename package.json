@@ -2,14 +2,13 @@
   "title": "Jalali Calendar",
   "name": "jalali-calendar",
   "id": "jalali-calendar@jetpack",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Show Shamsi date for persian users(Jalali Calendar - تقویم جلالی)",
-  "icon": "data/icon.png",
+  "icon": "resource://jalali-calendar-at-jetpack/data/jalali-64.png",
   "main": "index.js",
   "author": "Mostafa Ziasistani",
   "engines": {
-    "firefox": ">=38.0a1",
-    "fennec": ">=38.0a1"
+    "firefox": ">=38.0a1"
   },
   "license": "GPL 2.0",
   "keywords": [

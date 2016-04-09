@@ -1,118 +1,306 @@
-﻿	/**
-	 * Get shamsi and gregorian translate persian date and show them on page
-	 * 
-	 * @package Jalali Calendar
-	 */
-	
+﻿/**
+ * Get shamsi and gregorian date
+ * @package Jalali Calendar
+ */
+
+/**
+ * Main Jalali Script
+ */
+
+JalaliDate = {
+	g_days_in_month: [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
+	j_days_in_month: [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29]
+};
+
+JalaliDate.jalaliToGregorian = function(j_y, j_m, j_d)
+{
+	j_y = parseInt(j_y);
+	j_m = parseInt(j_m);
+	j_d = parseInt(j_d);
+	var jy = j_y-979;
+	var jm = j_m-1;
+	var jd = j_d-1;
+
+	var j_day_no = 365*jy + parseInt(jy / 33)*8 + parseInt((jy%33+3) / 4);
+	for (var i=0; i < jm; ++i) j_day_no += JalaliDate.j_days_in_month[i];
+
+	j_day_no += jd;
+
+	var g_day_no = j_day_no+79;
+
+	var gy = 1600 + 400 * parseInt(g_day_no / 146097); /* 146097 = 365*400 + 400/4 - 400/100 + 400/400 */
+	g_day_no = g_day_no % 146097;
+
+	var leap = true;
+	if (g_day_no >= 36525) /* 36525 = 365*100 + 100/4 */
+	{
+		g_day_no--;
+		gy += 100*parseInt(g_day_no/  36524); /* 36524 = 365*100 + 100/4 - 100/100 */
+		g_day_no = g_day_no % 36524;
+
+		if (g_day_no >= 365)
+			g_day_no++;
+		else
+			leap = false;
+	}
+
+	gy += 4*parseInt(g_day_no/ 1461); /* 1461 = 365*4 + 4/4 */
+	g_day_no %= 1461;
+
+	if (g_day_no >= 366) {
+		leap = false;
+
+		g_day_no--;
+		gy += parseInt(g_day_no/ 365);
+		g_day_no = g_day_no % 365;
+	}
+
+	for (var i = 0; g_day_no >= JalaliDate.g_days_in_month[i] + (i == 1 && leap); i++)
+		g_day_no -= JalaliDate.g_days_in_month[i] + (i == 1 && leap);
+	var gm = i+1;
+	var gd = g_day_no+1;
+
+	return [gy, gm, gd];
+}
+
+JalaliDate.checkDate = function(j_y, j_m, j_d)
+{
+	return !(j_y < 0 || j_y > 32767 || j_m < 1 || j_m > 12 || j_d < 1 || j_d >
+		(JalaliDate.j_days_in_month[j_m-1] + (j_m == 12 && !((j_y-979)%33%4))));
+}
+
+JalaliDate.gregorianToJalali = function(g_y, g_m, g_d)
+{
+	g_y = parseInt(g_y);
+	g_m = parseInt(g_m);
+	g_d = parseInt(g_d);
+	var gy = g_y-1600;
+	var gm = g_m-1;
+	var gd = g_d-1;
+
+	var g_day_no = 365*gy+parseInt((gy+3) / 4)-parseInt((gy+99)/100)+parseInt((gy+399)/400);
+
+	for (var i=0; i < gm; ++i)
+	g_day_no += JalaliDate.g_days_in_month[i];
+	if (gm>1 && ((gy%4==0 && gy%100!=0) || (gy%400==0)))
+	/* leap and after Feb */
+	++g_day_no;
+	g_day_no += gd;
+
+	var j_day_no = g_day_no-79;
+
+	var j_np = parseInt(j_day_no/ 12053);
+	j_day_no %= 12053;
+
+	var jy = 979+33*j_np+4*parseInt(j_day_no/1461);
+
+	j_day_no %= 1461;
+
+	if (j_day_no >= 366) {
+		jy += parseInt((j_day_no-1)/ 365);
+		j_day_no = (j_day_no-1)%365;
+	}
+
+	for (var i = 0; i < 11 && j_day_no >= JalaliDate.j_days_in_month[i]; ++i) {
+		j_day_no -= JalaliDate.j_days_in_month[i];
+	}
+	var jm = i+1;
+	var jd = j_day_no+1;
+
+
+	return [jy, jm, jd];
+}
+
+Date.prototype.setJalaliFullYear = function(y, m, d) {
+	var gd = this.getDate();
+	var gm = this.getMonth();
+	var gy = this.getFullYear();
+	var j = JalaliDate.gregorianToJalali(gy, gm+1, gd);
+	if (y < 100) y += 1300;
+	j[0] = y;
+	if (m != undefined) {
+		if (m > 11) {
+			j[0] += Math.floor(m / 12);
+			m = m % 12;
+		}
+		j[1] = m + 1;
+	}
+	if (d != undefined) j[2] = d;
+	var g = JalaliDate.jalaliToGregorian(j[0], j[1], j[2]);
+	return this.setFullYear(g[0], g[1]-1, g[2]);
+}
+
+Date.prototype.setJalaliMonth = function(m, d) {
+	var gd = this.getDate();
+	var gm = this.getMonth();
+	var gy = this.getFullYear();
+	var j = JalaliDate.gregorianToJalali(gy, gm+1, gd);
+	if (m > 11) {
+		j[0] += math.floor(m / 12);
+		m = m % 12;
+	}
+	j[1] = m+1;
+	if (d != undefined) j[2] = d;
+	var g = JalaliDate.jalaliToGregorian(j[0], j[1], j[2]);
+	return this.setFullYear(g[0], g[1]-1, g[2]);
+}
+
+Date.prototype.setJalaliDate = function(d) {
+	var gd = this.getDate();
+	var gm = this.getMonth();
+	var gy = this.getFullYear();
+	var j = JalaliDate.gregorianToJalali(gy, gm+1, gd);
+	j[2] = d;
+	var g = JalaliDate.jalaliToGregorian(j[0], j[1], j[2]);
+	return this.setFullYear(g[0], g[1]-1, g[2]);
+}
+
+Date.prototype.getJalaliFullYear = function() {
+	var gd = this.getDate();
+	var gm = this.getMonth();
+	var gy = this.getFullYear();
+	var j = JalaliDate.gregorianToJalali(gy, gm+1, gd);
+	return j[0];
+}
+
+Date.prototype.getJalaliMonth = function() {
+	var gd = this.getDate();
+	var gm = this.getMonth();
+	var gy = this.getFullYear();
+	var j = JalaliDate.gregorianToJalali(gy, gm+1, gd);
+	return j[1]-1;
+}
+
+Date.prototype.getJalaliDate = function() {
+	var gd = this.getDate();
+	var gm = this.getMonth();
+	var gy = this.getFullYear();
+	var j = JalaliDate.gregorianToJalali(gy, gm+1, gd);
+	return j[2];
+}
+
+Date.prototype.getJalaliDay = function() {
+	var day = this.getDay();
+	day = (day + 1) % 7;
+	return day;
+}
+
+
+/**
+ * Jalali UTC functions 
+ */
+
+Date.prototype.setJalaliUTCFullYear = function(y, m, d) {
+	var gd = this.getUTCDate();
+	var gm = this.getUTCMonth();
+	var gy = this.getUTCFullYear();
+	var j = JalaliDate.gregorianToJalali(gy, gm+1, gd);
+	if (y < 100) y += 1300;
+	j[0] = y;
+	if (m != undefined) {
+		if (m > 11) {
+			j[0] += Math.floor(m / 12);
+			m = m % 12;
+		}
+		j[1] = m + 1;
+	}
+	if (d != undefined) j[2] = d;
+	var g = JalaliDate.jalaliToGregorian(j[0], j[1], j[2]);
+	return this.setUTCFullYear(g[0], g[1]-1, g[2]);
+}
+
+Date.prototype.setJalaliUTCMonth = function(m, d) {
+	var gd = this.getUTCDate();
+	var gm = this.getUTCMonth();
+	var gy = this.getUTCFullYear();
+	var j = JalaliDate.gregorianToJalali(gy, gm+1, gd);
+	if (m > 11) {
+		j[0] += math.floor(m / 12);
+		m = m % 12;
+	}
+	j[1] = m+1;
+	if (d != undefined) j[2] = d;
+	var g = JalaliDate.jalaliToGregorian(j[0], j[1], j[2]);
+	return this.setUTCFullYear(g[0], g[1]-1, g[2]);
+}
+
+Date.prototype.setJalaliUTCDate = function(d) {
+	var gd = this.getUTCDate();
+	var gm = this.getUTCMonth();
+	var gy = this.getUTCFullYear();
+	var j = JalaliDate.gregorianToJalali(gy, gm+1, gd);
+	j[2] = d;
+	var g = JalaliDate.jalaliToGregorian(j[0], j[1], j[2]);
+	return this.setUTCFullYear(g[0], g[1]-1, g[2]);
+}
+
+Date.prototype.getJalaliUTCFullYear = function() {
+	var gd = this.getUTCDate();
+	var gm = this.getUTCMonth();
+	var gy = this.getUTCFullYear();
+	var j = JalaliDate.gregorianToJalali(gy, gm+1, gd);
+	return j[0];
+}
+
+Date.prototype.getJalaliUTCMonth = function() {
+	var gd = this.getUTCDate();
+	var gm = this.getUTCMonth();
+	var gy = this.getUTCFullYear();
+	var j = JalaliDate.gregorianToJalali(gy, gm+1, gd);
+	return j[1]-1;
+}
+
+Date.prototype.getJalaliUTCDate = function() {
+	var gd = this.getUTCDate();
+	var gm = this.getUTCMonth();
+	var gy = this.getUTCFullYear();
+	var j = JalaliDate.gregorianToJalali(gy, gm+1, gd);
+	return j[2];
+}
+
+Date.prototype.getJalaliUTCDay = function() {
+	var day = this.getUTCDay();
+	day = (day + 1) % 7;
+	return day;
+}
+
+
+
+
 	/**
-	 * Get shamsi date
-	 * @deprecate {issue on case 3: day+=9 & other places for new year(part of code not work)}
-	 * @since 0.1
+	 * Get shamsi date and show them on page
+	 * @Since 1.2.0
 	 */
-	
 	week= new Array("يكشنبه","دوشنبه","سه شنبه","چهارشنبه","پنج شنبه","جمعه","شنبه")
-	
+
 	months = new Array("فروردين","ارديبهشت","خرداد","تير","مرداد","شهريور","مهر","آبان","آذر","دي","بهمن","اسفند");
-	a = new Date();
-	d= a.getDay();
-	day= a.getDate();
-	month = a.getMonth()+1;
-	year= a.getYear();
-	year = (year== 0)?2000:year;
+	
+	now = new Date();
+	D = now.getDay();
+    day= now.getDate();
+	month = now.getMonth()+1;
+	year= now.getYear();
 	(year<1000)? (year += 1900):true;
-	year -= ( (month < 3) || ((month == 3) && (day < 21)) )? 622:621;
-	switch (month) {
-	case 1: (day<21)? (month=10, day+=10):(month=11, day-=20); break;
-	case 2: (day<20)? (month=11, day+=11):(month=12, day-=19); break;
-	case 3: (day<21)? (month=12, day+=9):(month=1, day-=20); break;
-	case 4: (day<21)? (month=1, day+=11):(month=2, day-=20); break;
-	case 5:
-	case 6: (day<22)? (month-=3, day+=10):(month-=2, day-=21); break;
-	case 7:
-	case 8:
-	case 9: (day<23)? (month-=3, day+=9):(month-=2, day-=22); break;
-	case 10:(day<23)? (month=7, day+=8):(month=8, day-=22); break;
-	case 11:
-	case 12:(day<22)? (month-=3, day+=9):(month-=2, day-=21); break;
-	default: break;
-	}
-	//var WriteDate = " "+week[d]+" "+day+" "+months[month-1]+" "+ year;//Not use
-	var WriteDayName = "" + week[d] + " ";
+	var JC = JalaliDate.gregorianToJalali(year,month,day);
+	//console.log(JalaliDate.gregorianToJalali(year,month,day));
+	var OurJalaliDate = JalaliDate.gregorianToJalali(year,month,day);
+	var OurJalaliWeek = week[D];
+	//console.log(OurJalaliWeek);
+	var OurJalaliDay = OurJalaliDate[2];
+	//console.log(OurJalaliDay);
+	var OurJalaliMonth = ( Number(OurJalaliDate[1]) ) - 1;
+	//console.log(OurJalaliMonth);
+	var OurJalaliMonth = months[OurJalaliMonth];
+	//console.log(OurJalaliMonth);
+	var OurJalaliYear = OurJalaliDate[0];
+	//console.log(OurJalaliYear);
 	//Output results
-	var show_day_shamsi = document.getElementById("show_day_shamsi");
-	var TextNODE = document.createTextNode(WriteDayName);
-	show_day_shamsi.appendChild(TextNODE);
+	var WriteCompleteToday = OurJalaliWeek + " " + OurJalaliDay + " " + OurJalaliMonth + " " + OurJalaliYear;
+	var show_date_shamsi = document.getElementById("show_date_shamsi");
+	var TextNODE = document.createTextNode(WriteCompleteToday);
+	show_date_shamsi.appendChild(TextNODE);
 	
-	/**
-	 * Get shamsi date ( new function )
-	 * 
-	 * @since 1.0.1
-	 * @see depracated previous code
-	 */	
-	if (typeof JCD === "undefined") var JCD = {};
-	if (typeof A$ !== "function") var A$ = function(a) {
-	    return document.getElementById(a)
-	};
-	if (typeof cTN !== "function") var cTN = function(a) {
-	    return document.createTextNode(a)
-	};
-	JCD.JDate = function(a) {
-	    var c = A$(a),
-	        b = new Date,
-	        b = jd_to_persian(gregorian_to_jd(b.getFullYear(), b.getMonth() + 1, b.getDate())),
-	        b = ConvertEnglishNumsToPersian(b[2].toString() + " " + PERSIAN_MONTH_NAMES[b[1] - 1] + " " + b[0].toString());
-	    for (setTimeout(function() {
-	            JCD.JDate(a)
-	        }, 6E4); c.firstChild;) c.removeChild(c.firstChild);
-	    c.appendChild(cTN(b))
-	};
-	var GREGORIAN_EPOCH = 1721425.5,
-	    PERSIAN_EPOCH = 1948320.5,
-	    PERSIAN_MONTH_NAMES = "\u0641\u0631\u0648\u0631\u062f\u06cc\u0646,\u0627\u0631\u062f\u06cc\u0628\u0647\u0634\u062a,\u062e\u0631\u062f\u0627\u062f,\u062a\u06cc\u0631,\u0645\u0631\u062f\u0627\u062f,\u0634\u0647\u0631\u06cc\u0648\u0631,\u0645\u0647\u0631,\u0622\u0628\u0627\u0646,\u0622\u0630\u0631,\u062f\u06cc,\u0628\u0647\u0645\u0646,\u0627\u0633\u0641\u0646\u062f".split(",");
-
-	function mod(a, c) {
-	    return a - c * Math.floor(a / c)
-	}
-
-	function leap_persian(a) {
-	    return ((a - (a > 0 ? 474 : 473)) % 2820 + 512) * 682 % 2816 < 682
-	}
-
-	function persian_to_jd(a, c, b) {
-	    var d;
-	    a -= a >= 0 ? 474 : 473;
-	    d = 474 + mod(a, 2820);
-	    return b + (c <= 7 ? (c - 1) * 31 : (c - 1) * 30 + 6) + Math.floor((d * 682 - 110) / 2816) + (d - 1) * 365 + Math.floor(a / 2820) * 1029983 + (PERSIAN_EPOCH - 1)
-	}
-
-	function jd_to_persian(a) {
-	    var c, b, d, a = Math.floor(a) + 0.5;
-	    b = a - persian_to_jd(475, 1, 1);
-	    c = Math.floor(b / 1029983);
-	    d = mod(b, 1029983);
-	    d == 1029982 ? b = 2820 : (b = Math.floor(d / 366), d = mod(d, 366), b = Math.floor((2134 * b + 2816 * d + 2815) / 1028522) + b + 1);
-	    c = b + 2820 * c + 474;
-	    c <= 0 && c--;
-	    b = a - persian_to_jd(c, 1, 1) + 1;
-	    b = b <= 186 ? Math.ceil(b / 31) : Math.ceil((b - 6) / 30);
-	    a = a - persian_to_jd(c, b, 1) + 1;
-	    return [c, b, a]
-	}
-
-	function leap_gregorian(a) {
-	    return a % 4 == 0 && !(a % 100 == 0 && a % 400 != 0)
-	}
-
-	function gregorian_to_jd(a, c, b) {
-	    return GREGORIAN_EPOCH - 1 + 365 * (a - 1) + Math.floor((a - 1) / 4) + -Math.floor((a - 1) / 100) + Math.floor((a - 1) / 400) + Math.floor((367 * c - 362) / 12 + (c <= 2 ? 0 : leap_gregorian(a) ? -1 : -2) + b)
-	}
-
-	function ConvertEnglishNumsToPersian(a) {
-	    for (var a = a.toString(), c = a.length, b = "", d = 0, d = 0; d < c; ++d) b += String.fromCharCode(a.charCodeAt(d) >= 48 && a.charCodeAt(d) <= 57 ? a.charCodeAt(d) + 1728 : a.charCodeAt(d));
-	    return b
-	};
 	
-
 	/**
 	 * Get persian translate for gregorian date
 	 * 
@@ -155,23 +343,3 @@
 	var show_date_gregorian = document.getElementById("show_date_gregorian");
 	var TextNODE1 = document.createTextNode(WriteDate1);
 	show_date_gregorian.appendChild(TextNODE1);
-
-
-
-
-	/**
-	 * Old gregorian script
-	 * 
-	 * @deprecated
-	 */
-	//var monthNames = ["ژانویه", "فوریه", "مارس", "آپریل", "می", "ژوئن",
-	  //"ژولای", "آگوست", "سپتامبر", "اکتبر", "نوامبر", "دسامبر"
-	//];
-	//var dayNames = ["یکشنبه", "دوشنبه", "سه شنبه", "چهار شنبه", "پنجشنبه", "جمعه","شنبه"];
-	//Example
-	//var d = new Date();
-	//console.log(d);
-	//console.log(d.getMonth());
-	//console.log(d.getDay());
-	//document.write("The current month is " + monthNames[d.getMonth()]);
-	//document.write("The current day is " + dayNames[d.getDay()]);

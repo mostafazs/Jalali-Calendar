@@ -5,12 +5,22 @@
 <meta charset="UTF-8"/>
 </head>
 <body>
-
-<span id="show_day_shamsi"></span><span id="show_date_shamsi"></span>
+<div id="show_date_shamsi"></div>
 <div id="show_date_gregorian"></div>
 <script src="./shamsi_gregorian_date.js"></script>
 <script>
-JCD.JDate("show_date_shamsi");
+var data = JC;
+//For first add on load
+addon.port.emit('show-badge',data);
+addon.port.on('from-handleChange',function(){
+	//reload to get new values
+	window.location.reload();
+	addon.port.emit('show-badge',data);
+});
+//Update button
+addon.port.on('updateButton',function(){
+	window.location.reload();
+});
 </script>
 </body>
 </html>
